@@ -239,7 +239,7 @@ export default function SetupPage() {
 
           <div style={{ marginTop: "auto", paddingTop: 32, display: "flex", gap: 10 }}>
             <BtnOutline onClick={() => setStep(2)} style={{ width: "auto", padding: "15px 24px" }}>ย้อนกลับ</BtnOutline>
-            <BtnPrimary handleFinish={handleFinish} disabled={saving} style={{ flex: 1 }} onClick={handleFinish}>
+            <BtnPrimary disabled={saving} style={{ flex: 1 }} onClick={handleFinish}>
               {saving ? "กำลังบันทึก..." : "เริ่มเลย"}
             </BtnPrimary>
           </div>
