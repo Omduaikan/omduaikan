@@ -8,6 +8,8 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import BottomNav from "@/components/BottomNav";
 import { token, t, BtnPrimary, Input, Card, Spinner, Label } from "@/components/ui";
 import { LogOut, User, DollarSign, Calendar, ShieldCheck } from "lucide-react";
+import PushNotificationToggle from "@/components/PushNotification/PushNotificationToggle";
+
 
 export default function ProfilePage() {
   const { profile, loading } = useUserProfile();
@@ -93,7 +95,12 @@ export default function ProfilePage() {
       </div>
 
       {/* ── ข้อมูลส่วนตัว ── */}
-      <section style={{ marginBottom: 32 }}>
+      
+        {/* ── การแจ้งเตือน ── */}
+        <section style={{ marginBottom: 32 }}>
+          <PushNotificationToggle />
+        </section>
+<section style={{ marginBottom: 32 }}>
         <Label>ข้อมูลพื้นฐาน</Label>
         <Card style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

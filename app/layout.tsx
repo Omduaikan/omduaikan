@@ -1,28 +1,29 @@
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
 
-const geist = Geist({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "ออมด้วยกัน",
-  description: "วางแผนการเงินด้วยกัน",
+export const metadata = {
+  title: "Omduaikan",
+  description: "App สำหรับแจ้งเตือนการทานยา",
+  manifest: "/manifest.json",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const viewport = {
+  themeColor: "#000000",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="th">
-      <body
-        className={geist.className}
-        style={{
-          background: "#FAFAF8",
-          color: "#1C1C1A",
-          minHeight: "100vh",
-        }}
-      >
-        <AuthProvider>{children}</AuthProvider>
-      </body>
+      <head>
+        <link rel="apple-touch-icon" href="/apple-icon-180.png" />
+      </head>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
