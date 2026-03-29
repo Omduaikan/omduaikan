@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       subscription,
       JSON.stringify({
         title: title || "Omduaikan",
-        body: message || "ได้เวลาทานยาแล้ว!",
+        body: message || "ได้เวลาออมเงินตามเป้าหมายแล้ว!",
         url: "/",
       })
     );

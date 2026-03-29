@@ -25,9 +25,9 @@ const serwist = new Serwist({
 // Push notification event listener
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
-  const title = data.title || "Omduaikan แจ้งเตือน";
+  const title = data.title || "Omduaikan ออมด้วยกัน";
   const options = {
-    body: data.body || "ได้เวลาทานยาแล้ว!",
+    body: data.body || "ได้เวลาออมเงินตามเป้าหมายแล้ว!",
     icon: "/icon-192x192.png",
     badge: "/icon-192x192.png",
     data: {

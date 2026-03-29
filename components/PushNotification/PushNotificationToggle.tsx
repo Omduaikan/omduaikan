@@ -32,7 +32,11 @@ export default function PushNotificationToggle() {
 
   const checkSubscription = async () => {
     try {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        setIsSubscribed(false);
+        return;
+      }
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
     } catch (error) {
@@ -53,7 +57,13 @@ export default function PushNotificationToggle() {
       }
 
       // 2. Get Service Worker
-      const registration = await navigator.serviceWorker.ready;
+      let registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        registration = await navigator.serviceWorker.register("/sw.js");
+      }
+      
+      // Ensure it's active
+      registration = await navigator.serviceWorker.ready;
       
       // 3. Subscribe
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -85,7 +95,9 @@ export default function PushNotificationToggle() {
   const unsubscribeFromPush = async () => {
     try {
       setLoading(true);
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) return;
+
       const subscription = await registration.pushManager.getSubscription();
       
       if (subscription) {
@@ -133,7 +145,7 @@ export default function PushNotificationToggle() {
         <div>
           <h3 className="font-medium text-gray-900">การแจ้งเตือนแอป</h3>
           <p className="text-xs text-gray-500">
-            {isSubscribed ? "เปิดรับการแจ้งเตือนแล้ว" : "รับการแจ้งเตือนเมื่อถึงเวลาทานยา"}
+            {isSubscribed ? "เปิดรับการแจ้งเตือนแล้ว" : "รับการแจ้งเตือนเมื่อถึงเวลาออมเงิน"}
           </p>
         </div>
       </div>
