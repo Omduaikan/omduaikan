@@ -184,7 +184,7 @@ export default function OverviewPage() {
                 fontSize: 40, fontWeight: 500, letterSpacing: "-1.5px",
                 color: token.accent, margin: "4px 0 0",
               }}>
-                ฿{saved.toLocaleString()}
+                ฿{displaySaved.toLocaleString()}
               </p>
               <p style={{ ...t.tiny, marginTop: 4 }}>
                 เป้า ฿{savingTarget.toLocaleString()}
@@ -200,7 +200,7 @@ export default function OverviewPage() {
               <p style={{ ...t.tiny, marginTop: 2 }}>ของเป้า</p>
             </div>
           </div>
-          <ProgressBar value={saved} max={savingTarget} color={token.accent} />
+          <ProgressBar value={displaySaved} max={savingTarget} color={token.accent} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
             <p style={{ ...t.tiny }}>เหลืออีก {daysLeft} วัน</p>
             <p style={{ ...t.tiny }}>
