@@ -23,21 +23,47 @@ export function useTransactions(
     const payPeriodKey = getPayPeriodKey(periodStart);
 
     const q = query(
-  collection(db, "transactions"),
-  where("coupleId", "==", coupleId),
-  orderBy("createdAt", "desc")
-);
+      collection(db, "transactions"),
+      where("coupleId", "==", coupleId),
+      orderBy("createdAt", "desc")
+    );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const txs = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-        createdAt:      d.data().createdAt.toDate(),
-        payPeriodStart: d.data().payPeriodStart.toDate(),
-      })) as Transaction[];
-      setTransactions(txs);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(q, 
+      (snap) => {
+        const txs = snap.docs.map((d) => {
+          const data = d.data();
+          
+          // Safe date parsing to prevent crashes with legacy data
+          const createdAt = data.createdAt instanceof Timestamp 
+            ? data.createdAt.toDate() 
+            : new Date();
+            
+          const payPeriodStart = data.payPeriodStart instanceof Timestamp
+            ? data.payPeriodStart.toDate()
+            : periodStart; // Fallback to current period start if missing
+
+          const filtered = txs.filter((tx) => tx.createdAt >= periodStart);
+setTransactions(filtered);
+
+          return {
+            id: d.id,
+            ...data,
+            createdAt,
+            payPeriodStart,
+          };
+        }) as Transaction[];
+        
+        setTransactions(txs);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Firestore Listener Error:", error);
+        if (error.code === 'failed-precondition') {
+          console.error("Missing Composite Index! Create it here: ", error.message);
+        }
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [coupleId, paydayType, paydayDate]);

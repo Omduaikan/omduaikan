@@ -35,14 +35,14 @@ export default function SetupPage() {
     try {
       let coupleId = inviteCode.trim();
       if (!coupleId) {
-        const ref = await addDoc(collection(db, "couples"), {
-          member1: user.uid, member2: null,
-          totalMonthlyIncome: incomeNum, // ตอนนี้เป็น float แล้ว
+        coupleId = user.uid;
+        await setDoc(doc(db, "couples", coupleId), {
+          member1: user.uid,
+          totalMonthlyIncome: incomeNum,
           createdAt: new Date(),
-        });
-        coupleId = ref.id;
+        }, { merge: true });
       } else {
-        await updateDoc(doc(db, "couples", coupleId), { member2: user.uid });
+        await setDoc(doc(db, "couples", coupleId), { member2: user.uid }, { merge: true });
       }
 
       const profile = {
