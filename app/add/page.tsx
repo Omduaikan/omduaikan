@@ -13,38 +13,64 @@ import BottomNav from "@/components/BottomNav";
 import { token, t, BtnPrimary, Chip } from "@/components/ui";
 
 const CATEGORIES: Category[] = [
-  "อาหาร", "เดินทาง", "ช้อปปิ้ง",
-  "สุขภาพ", "บันเทิง", "ที่พัก",
-  "ค่าบ้าน/บิล", "รายจ่ายพิเศษ", "อื่นๆ",
+  "อาหาร & เครื่องดื่ม",
+  "เดินทาง & รถ",
+  "ที่พัก & บิล",
+  "ของใช้ในบ้าน",
+  "ช้อปปิ้ง",
+  "สุขภาพ & ความงาม",
+  "บันเทิง & พักผ่อน",
+  "การศึกษา",
+  "ครอบครัว & สัตว์เลี้ยง",
+  "ทำบุญ & ของขวัญ",
+  "เงินออม & ลงทุน",
+  "รายจ่ายพิเศษ",
+  "อื่นๆ",
 ];
 
 const CAT_BUCKET: Record<Category, string> = {
-  อาหาร:         "needs",
-  เดินทาง:        "needs",
-  ที่พัก:         "needs",
-  สุขภาพ:         "needs",
-  "ค่าบ้าน/บิล":  "needs",
-  ช้อปปิ้ง:       "wants",
-  บันเทิง:        "wants",
-  รายจ่ายพิเศษ:   "needs",
-  อื่นๆ:          "wants",
+  "อาหาร & เครื่องดื่ม": "needs",
+  "เดินทาง & รถ":     "needs",
+  "ที่พัก & บิล":      "needs",
+  "ของใช้ในบ้าน":     "needs",
+  "ช้อปปิ้ง":         "wants",
+  "สุขภาพ & ความงาม": "needs",
+  "บันเทิง & พักผ่อน":  "wants",
+  "การศึกษา":        "needs",
+  "ครอบครัว & สัตว์เลี้ยง": "needs",
+  "ทำบุญ & ของขวัญ":  "wants",
+  "เงินออม & ลงทุน":    "savings",
+  "รายจ่ายพิเศษ":     "needs",
+  "อื่นๆ":           "wants",
 };
 
-// ← AI แนะนำ category จาก note ที่พิมพ์ (ทำ local ไม่ต้องเรียก API)
+// ← AI แนะนำ category จาก note ที่พิมพ์
 function guessCategory(note: string): Category | null {
   const n = note.toLowerCase();
-  if (/ข้าว|กิน|ร้าน|อาหาร|กาแฟ|ชา|นม|ขนม/.test(n))      return "อาหาร";
-  if (/รถ|บัส|มอ|แกร็บ|grab|taxi|แท็กซี่|เดิน/.test(n))   return "เดินทาง";
-  if (/ไฟ|น้ำ|เน็ต|internet|ค่าบ้าน|ซ่อม|บิล/.test(n))   return "ค่าบ้าน/บิล";
-  if (/ยา|หมอ|โรงพยาบาล|คลินิก|ฟัน/.test(n))              return "สุขภาพ";
-  if (/หนัง|เกม|คอนเสิร์ต|ท่องเที่ยว|เที่ยว/.test(n))     return "บันเทิง";
-  if (/โรงแรม|ที่พัก|ห้อง/.test(n))                        return "ที่พัก";
-  if (/ซื้อ|ช้อป|เสื้อ|รองเท้า|กระเป๋า|shopee|lazada/.test(n)) return "ช้อปปิ้ง";
+  if (/ข้าว|กิน|ร้าน|อาหาร|กาแฟ|ชา|นม|ขนม|บุฟเฟ่ต์|น้ำเปล่า|เซเว่น|7-11/.test(n)) return "อาหาร & เครื่องดื่ม";
+  if (/รถ|บัส|มอ|แกร็บ|grab|taxi|แท็กซี่|เดิน|น้ำมัน|เติมน้ำมัน|จอดรถ|ทางด่วน/.test(n)) return "เดินทาง & รถ";
+  if (/ไฟ|น้ำ|เน็ต|internet|ค่าบ้าน|ซ่อม|บิล|มือถือ|โทรศัพท์|เช่า/.test(n)) return "ที่พัก & บิล";
+  if (/สบู่|แชมพู|ทิชชู่|ผงซักฟอก|น้ำยา|ของใช้|ซุปเปอร์|lotus|bigc/.test(n)) return "ของใช้ในบ้าน";
+  if (/ซื้อ|ช้อป|เสื้อ|รองเท้า|กระเป๋า|shopee|lazada|tiktok|mall/.test(n)) return "ช้อปปิ้ง";
+  if (/ยา|หมอ|โรงพยาบาล|คลินิก|ฟัน|วิตามิน|สกินแคร์|แต่งหน้า|ตัดผม/.test(n)) return "สุขภาพ & ความงาม";
+  if (/หนัง|เกม|คอนเสิร์ต|ท่องเที่ยว|เที่ยว|พักผ่อน|โรงแรม|รีสอร์ท|netflix|disney|youtube/.test(n)) return "บันเทิง & พักผ่อน";
+  if (/หนังสือ|เรียน|คอร์ส|ติว|สอบ|สมัคร/.test(n)) return "การศึกษา";
+  if (/พ่อ|แม่|ลูก|หมา|แมว|สัตว์เลี้ยง|ทรายแมว|อาหารสัตว์/.test(n)) return "ครอบครัว & สัตว์เลี้ยง";
+  if (/ทำบุญ|บริจาค|ของขวัญ|งานแต่ง|งานบวช|วันเกิด/.test(n)) return "ทำบุญ & ของขวัญ";
+  if (/ออม|ฝากเงิน|ลงทุน|หุ้น|คริปโต|ทอง|กองทุน|ออมทรัพย์/.test(n)) return "เงินออม & ลงทุน";
+  if (/อุบัติเหตุ|ซ่อมฉุกเฉิน|ค่าปรับ|ภาษี/.test(n)) return "รายจ่ายพิเศษ";
   return null;
 }
 
-function amountLabel(n: number): { text: string; color: string } {
+function amountLabel(n: number, category: Category | null): { text: string; color: string } {
   if (n <= 0)   return { text: "", color: "" };
+  
+  // ถ้าเป็นเงินออม ให้แสดงข้อความให้กำลังใจ
+  if (category === "เงินออม & ลงทุน") {
+    if (n >= 1000) return { text: "เก่งมากเลย! เก็บได้เยอะเชียว", color: token.accent };
+    return { text: "เก็บทีละนิด ก็ถึงเป้าได้นะ", color: token.accent };
+  }
+
   if (n <= 100) return { text: "ประหยัดมาก", color: token.accent };
   if (n <= 300) return { text: "พอใช้ได้", color: token.textSecondary };
   if (n <= 800) return { text: "ค่อนข้างเยอะ", color: "#8A6D3B" };
@@ -68,7 +94,7 @@ export default function AddPage() {
   // แก้ไข: ใช้ parseFloat แทน parseInt เพื่อรองรับเศษสตางค์
   const amountNum = parseFloat(amount) || 0;
   const canSave   = amountNum > 0 && cat !== null;
-  const label     = amountLabel(amountNum);
+  const label     = amountLabel(amountNum, cat);
 
   // ← AI แนะนำ category เมื่อพิมพ์ note
   useEffect(() => {

@@ -29,15 +29,18 @@ const STATUS_CONFIG: Record<BudgetStatus, { bg: string; border: string; text: st
 };
 
 const CAT_COLOR: Record<Category, string> = {
-  อาหาร:          token.accent,
-  เดินทาง:         "#4A7FB5",
-  ช้อปปิ้ง:        "#8A6D3B",
-  สุขภาพ:          "#4A7A4A",
-  บันเทิง:         "#A0522D",
-  ที่พัก:          "#6B5B8A",
-  "ค่าบ้าน/บิล":   "#5B7A8A",
-  รายจ่ายพิเศษ:    "#8A5B6B",
-  อื่นๆ:           token.textHint,
+  "อาหาร & เครื่องดื่ม": token.accent,
+  "เดินทาง & รถ":     "#4A7FB5",
+  "ที่พัก & บิล":      "#5B7A8A",
+  "ของใช้ในบ้าน":     "#8A5B6B",
+  "ช้อปปิ้ง":         "#8A6D3B",
+  "สุขภาพ & ความงาม": "#4A7A4A",
+  "บันเทิง & พักผ่อน":  "#A0522D",
+  "การศึกษา":        "#6B5B8A",
+  "ครอบครัว & สัตว์เลี้ยง": "#C06C84",
+  "ทำบุญ & ของขวัญ":  "#F67280",
+  "รายจ่ายพิเศษ":     "#355C7D",
+  "อื่นๆ":           token.textHint,
 };
 
 export default function OverviewPage() {
@@ -63,22 +66,38 @@ export default function OverviewPage() {
   // ── คำนวณ ──
   const myTxs        = transactions.filter((tx) => tx.userId === user!.uid);
   const partnerTxs   = transactions.filter((tx) => tx.userId !== user!.uid);
-  const mySpent      = myTxs.reduce((s, tx) => s + tx.amount, 0);
-  const partnerSpent = partnerTxs.reduce((s, tx) => s + tx.amount, 0);
+
+  // แยกรายจ่ายปกติ กับ เงินออมที่บันทึกเข้ามา
+  const myRegularTxs   = myTxs.filter(tx => tx.category !== "เงินออม & ลงทุน");
+  const partnerRegTxs  = partnerTxs.filter(tx => tx.category !== "เงินออม & ลงทุน");
+  
+  const mySpent        = myRegularTxs.reduce((s, tx) => s + tx.amount, 0);
+  const partnerSpent   = partnerRegTxs.reduce((s, tx) => s + tx.amount, 0);
+
+  // ยอดเงินออมที่บันทึกผ่านปุ่ม + (ของทั้งคู่รวมกัน)
+  const actualSavedTxs = transactions.filter(tx => tx.category === "เงินออม & ลงทุน");
+  const actualSavedAmount = actualSavedTxs.reduce((s, tx) => s + tx.amount, 0);
 
   const savingTarget = buckets
     .filter((b) => ["savings", "emergency", "investment"].includes(b.type))
     .reduce((s, b) => s + b.targetAmount, 0);
 
   const netIncome   = profile.monthlyIncome - profile.expenseBuffer;
-  const saved       = Math.max(netIncome - mySpent, 0);
+  // เงินที่ "น่าจะ" เก็บได้จากยอดที่เหลือ (Passive)
+  const potentialSaved = Math.max(netIncome - mySpent, 0); 
+  // ใช้ยอดที่บันทึกจริงมาแสดง ถ้ามีการบันทึก แต่ถ้ายังไม่บันทึก ให้ดูยอด potential
+  const displaySaved  = actualSavedAmount > 0 ? actualSavedAmount : potentialSaved;
+  
   const savingPct   = savingTarget > 0
-    ? Math.min(Math.round((saved / savingTarget) * 100), 100) : 0;
+    ? Math.min(Math.round((displaySaved / savingTarget) * 100), 100) : 0;
+  
   const daysLeft    = getDaysUntilPayday(profile.paydayType, profile.paydayDate);
   const projected   = getProjectedSavings(
     profile.monthlyIncome, profile.expenseBuffer, mySpent,
     profile.paydayType, profile.paydayDate
   );
+  
+  // dailyBudget ใช้ mySpent ที่ไม่รวมเงินออม เพราะ savingTarget ถูกหักไปแล้วในสูตร
   const dailyBudget = getDailyBudget(
     profile.monthlyIncome, profile.expenseBuffer, savingTarget,
     profile.paydayType, profile.paydayDate
@@ -94,13 +113,13 @@ export default function OverviewPage() {
   const rollover = Math.max(dailyLeft - dailyBudget, 0);
 
   const todayStr        = format(new Date(), "yyyy-MM-dd");
-  const myToday         = myTxs
+  const myToday         = myRegularTxs
     .filter((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr)
     .reduce((s, tx) => s + tx.amount, 0);
-  const partnerToday    = partnerTxs
+  const partnerToday    = partnerRegTxs
     .filter((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr)
     .reduce((s, tx) => s + tx.amount, 0);
-  const partnerRecorded = partnerTxs
+  const partnerRecorded = partnerRegTxs
     .some((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr);
 
   const hour     = new Date().getHours();
