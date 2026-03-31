@@ -62,9 +62,13 @@ export default function OnboardingPage() {
 
   async function handleConfirm() {
     if (!user || !profile?.coupleId) return;
+    
+    // Type narrowing for TypeScript
+    const cid = profile.coupleId;
+    
     setSaving(true);
     try {
-      const ref = collection(db, "couples", profile.coupleId, "buckets");
+      const ref = collection(db, "couples", cid, "buckets");
       
       // [Prevention] Clean up existing buckets first to avoid duplicates
       const snap = await getDocs(ref);
@@ -75,7 +79,7 @@ export default function OnboardingPage() {
       // [Shared] Save buckets with fixed IDs (type) to ensure only one of each exists
       await Promise.all(
         recs.map((r, i) => {
-          const bucketDocRef = doc(db, "couples", profile.coupleId, "buckets", r.type);
+          const bucketDocRef = doc(db, "couples", cid, "buckets", r.type);
           return setDoc(bucketDocRef, {
             type: r.type, 
             name: r.name,
@@ -85,7 +89,7 @@ export default function OnboardingPage() {
             color: BUCKET_DEFAULTS[r.type].color,
             icon: BUCKET_DEFAULTS[r.type].icon,
             order: i, 
-            coupleId: profile.coupleId,
+            coupleId: cid,
             createdAt: new Date(),
           });
         })
