@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { doc, setDoc, collection, addDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { UserProfile } from "@/types";
 import { token, t, BtnPrimary, BtnOutline, Input, Spinner } from "@/components/ui";
 
 type Step = 1 | 2 | 3;
