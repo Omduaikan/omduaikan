@@ -42,6 +42,7 @@ const CAT_COLOR: Record<Category, string> = {
   "เงินออม & ลงทุน":    "#E6C229",
   "รายจ่ายพิเศษ":     "#355C7D",
   "อื่นๆ":           token.textHint,
+  "รายรับพิเศษ":      "#2D7A5F", // ใช้สีเขียวเดียวกับ accent
 };
 
 export default function OverviewPage() {
