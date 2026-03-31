@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useUserProfile, usePartnerProfile } from "@/hooks/useUserProfile";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBuckets } from "@/hooks/useBuckets";
 import { useGoals } from "@/hooks/useGoals";
@@ -41,13 +41,14 @@ const CAT_COLOR: Record<Category, string> = {
   "เงินออม & ลงทุน":    "#E6C229",
   "รายจ่ายพิเศษ":     "#355C7D",
   "อื่นๆ":           token.textHint,
-  "รายรับพิเศษ":      "#2D7A5F", // ใช้สีเขียวเดียวกับ accent
+  "รายรับพิเศษ":      "#2D7A5F", 
 };
 
 export default function OverviewPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { profile, loading: profileLoading } = useUserProfile();
+  const { partnerProfile } = usePartnerProfile(profile?.partnerId);
   const { transactions, loading: txLoading } = useTransactions(
     profile?.coupleId,
     profile?.paydayType ?? "end_of_month",
@@ -72,7 +73,7 @@ export default function OverviewPage() {
   const myRegularTxs   = myTxs.filter(tx => tx.category !== "เงินออม & ลงทุน");
   const partnerRegTxs  = partnerTxs.filter(tx => tx.category !== "เงินออม & ลงทุน");
   
-  // คำนวณยอดที่ใช้ไป โดยถ้าเป็น "รายรับพิเศษ" ให้นำไปลบออกจากยอดที่ใช้ (ทำให้ยอดใช้น้อยลง = มีเงินเหลือมากขึ้น)
+  // คำนวณยอดที่ใช้ไป โดยถ้าเป็น "รายรับพิเศษ" ให้นำไปลบออกจากยอดที่ใช้
   const mySpent        = myRegularTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
   const partnerSpent   = partnerRegTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
   const totalSpent     = mySpent + partnerSpent;
@@ -100,15 +101,13 @@ export default function OverviewPage() {
   
   const daysLeft    = getDaysUntilPayday(profile.paydayType, profile.paydayDate);
   const projected   = getProjectedSavings(
-    totalIncome, totalBuffer, totalSpent, // คาดการณ์จากยอดรวมทั้งคู่
+    totalIncome, totalBuffer, totalSpent, 
     profile.paydayType, profile.paydayDate
   );
   
-  // dailyBudget ยังเป็นส่วนตัว: ใช้ mySpent ที่ไม่รวมเงินออม เพราะ savingTarget ถูกหักไปแล้วในสูตร
-  // หมายเหตุ: dailyBudget จะอิงตามเป้าออมส่วนตัวที่ "ควรจะเป็น" (proportion) หรือตามเป้าของคู่ที่หารครึ่ง? 
-  // เบื้องต้นใช้ savingTarget ของคู่มาหักออกจากรายได้ตัวเองไปก่อน เพื่อให้เห็นงบที่ปลอดภัยที่สุด
+  // dailyBudget ยังเป็นส่วนตัว: แบ่งเป้าออมคนละครึ่งมาคำนวณงบรายวัน
   const dailyBudget = getDailyBudget(
-    profile.monthlyIncome, profile.expenseBuffer, savingTarget / 2, // แบ่งเป้าออมคนละครึ่งมาคำนวณงบรายวัน
+    profile.monthlyIncome, profile.expenseBuffer, savingTarget / 2,
     profile.paydayType, profile.paydayDate
   );
   const dailyLeft   = getDailyBudgetLeft(
@@ -217,35 +216,35 @@ export default function OverviewPage() {
 
       {/* ── daily budget + status ── */}
       <div style={{
-  background: statusCfg.bg,
-  border: `1px solid ${statusCfg.border}`,
-  borderRadius: 16, padding: "18px 20px", marginBottom: 12,
-}}>
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-    <div>
-      <Label>ใช้ได้อีกวันนี้</Label>
-      <p style={{
-        fontSize: 32, fontWeight: 500, letterSpacing: "-1px",
-        margin: "4px 0 0", color: statusCfg.text,
+        background: statusCfg.bg,
+        border: `1px solid ${statusCfg.border}`,
+        borderRadius: 16, padding: "18px 20px", marginBottom: 12,
       }}>
-        {dailyLeft < 0 && "−"}฿{Math.abs(dailyLeft).toLocaleString()}
-      </p>
-      <p style={{ ...t.tiny, marginTop: 6, color: statusCfg.text }}>
-        {myToday > 0
-          ? `ใช้ไปแล้ว ฿${myToday.toLocaleString()} วันนี้`
-          : "ยังไม่ได้ใช้วันนี้เลย"}
-      </p>
-    </div>
-    <div style={{
-      background: token.surface, borderRadius: 10,
-      padding: "6px 14px", alignSelf: "flex-start",
-    }}>
-      <p style={{ fontSize: 13, fontWeight: 500, color: statusCfg.text, margin: 0 }}>
-        {statusCfg.label}
-      </p>
-    </div>
-  </div>
-</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <Label>ใช้ได้อีกวันนี้</Label>
+            <p style={{
+              fontSize: 32, fontWeight: 500, letterSpacing: "-1px",
+              margin: "4px 0 0", color: statusCfg.text,
+            }}>
+              {dailyLeft < 0 && "−"}฿{Math.abs(dailyLeft).toLocaleString()}
+            </p>
+            <p style={{ ...t.tiny, marginTop: 6, color: statusCfg.text }}>
+              {myToday > 0
+                ? `ใช้ไปแล้ว ฿${myToday.toLocaleString()} วันนี้`
+                : "ยังไม่ได้ใช้วันนี้เลย"}
+            </p>
+          </div>
+          <div style={{
+            background: token.surface, borderRadius: 10,
+            padding: "6px 14px", alignSelf: "flex-start",
+          }}>
+            <p style={{ fontSize: 13, fontWeight: 500, color: statusCfg.text, margin: 0 }}>
+              {statusCfg.label}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* ── today cards + partner status ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
