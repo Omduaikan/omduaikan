@@ -72,8 +72,9 @@ export default function OverviewPage() {
   const myRegularTxs   = myTxs.filter(tx => tx.category !== "เงินออม & ลงทุน");
   const partnerRegTxs  = partnerTxs.filter(tx => tx.category !== "เงินออม & ลงทุน");
   
-  const mySpent        = myRegularTxs.reduce((s, tx) => s + tx.amount, 0);
-  const partnerSpent   = partnerRegTxs.reduce((s, tx) => s + tx.amount, 0);
+  // คำนวณยอดที่ใช้ไป โดยถ้าเป็น "รายรับพิเศษ" ให้นำไปลบออกจากยอดที่ใช้ (ทำให้ยอดใช้น้อยลง = มีเงินเหลือมากขึ้น)
+  const mySpent        = myRegularTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
+  const partnerSpent   = partnerRegTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
 
   // ยอดเงินออมที่บันทึกผ่านปุ่ม + (ของทั้งคู่รวมกัน)
   const actualSavedTxs = transactions.filter(tx => tx.category === "เงินออม & ลงทุน");

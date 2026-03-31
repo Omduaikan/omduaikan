@@ -65,6 +65,7 @@ export type Category =
   | "เงินออม & ลงทุน"
   | "รายจ่ายพิเศษ"
   | "อื่นๆ"
+  | "รายรับพิเศษ"
 
 export interface Transaction {
   id: string

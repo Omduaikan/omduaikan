@@ -26,9 +26,10 @@ const CATEGORIES: Category[] = [
   "เงินออม & ลงทุน",
   "รายจ่ายพิเศษ",
   "อื่นๆ",
+  "รายรับพิเศษ",
 ];
 
-const CAT_BUCKET: Record<Category, string> = {
+const CAT_BUCKET: Record<Category, string | null> = {
   "อาหาร & เครื่องดื่ม": "needs",
   "เดินทาง & รถ":     "needs",
   "ที่พัก & บิล":      "needs",
@@ -42,6 +43,7 @@ const CAT_BUCKET: Record<Category, string> = {
   "เงินออม & ลงทุน":    "savings",
   "รายจ่ายพิเศษ":     "needs",
   "อื่นๆ":           "wants",
+  "รายรับพิเศษ":      null,
 };
 
 // ← AI แนะนำ category จาก note ที่พิมพ์
@@ -59,12 +61,17 @@ function guessCategory(note: string): Category | null {
   if (/ทำบุญ|บริจาค|ของขวัญ|งานแต่ง|งานบวช|วันเกิด/.test(n)) return "ทำบุญ & ของขวัญ";
   if (/ออม|ฝากเงิน|ลงทุน|หุ้น|คริปโต|ทอง|กองทุน|ออมทรัพย์/.test(n)) return "เงินออม & ลงทุน";
   if (/อุบัติเหตุ|ซ่อมฉุกเฉิน|ค่าปรับ|ภาษี/.test(n)) return "รายจ่ายพิเศษ";
+  if (/เงินเดือน|โบนัส|ขาย|ได้เงิน|รับเงิน|เงินเข้า|คืน|ค่าน้ำมันคืน|รายได้/.test(n)) return "รายรับพิเศษ";
   return null;
 }
 
 function amountLabel(n: number, category: Category | null): { text: string; color: string } {
   if (n <= 0)   return { text: "", color: "" };
   
+  if (category === "รายรับพิเศษ") {
+    return { text: "เงินเข้า! เยี่ยมไปเลย", color: token.accent };
+  }
+
   // ถ้าเป็นเงินออม ให้แสดงข้อความให้กำลังใจ
   if (category === "เงินออม & ลงทุน") {
     if (n >= 1000) return { text: "เก่งมากเลย! เก็บได้เยอะเชียว", color: token.accent };
