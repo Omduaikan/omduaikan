@@ -198,13 +198,60 @@ export default function ProfilePage() {
         </div>
         <Card style={{ background: token.surfaceAlt }}>
           <p style={{ ...t.tiny, marginBottom: 4 }}>รหัสของคุณ (ส่งให้แฟนเพื่อเชื่อมต่อ)</p>
-          <code style={{ fontSize: 12, color: token.textSecondary, wordBreak: "break-all" }}>
+          <code style={{ fontSize: 12, color: token.textSecondary, wordBreak: "break-all", background: token.surface, padding: "4px 8px", borderRadius: 4, display: "block", marginTop: 4 }}>
             {profile.uid}
           </code>
-          {profile.partnerId && (
-            <p style={{ ...t.tiny, marginTop: 12, color: token.accent, fontWeight: 500 }}>
-              ✓ เชื่อมต่อกับแฟนแล้ว
-            </p>
+          {profile.partnerId ? (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${token.border}` }}>
+              <p style={{ ...t.tiny, color: token.accent, fontWeight: 500, marginBottom: 12 }}>
+                ✓ เชื่อมต่อกับแฟนแล้ว
+              </p>
+              <button
+                onClick={async () => {
+                  if (confirm("คุณต้องการยกเลิกการเชื่อมต่อกับแฟนใช่หรือไม่?\n(ข้อมูลรายจ่ายของคุณจะถูกแยกออกมาเป็นของตัวเอง)")) {
+                    setSaving(true);
+                    try {
+                      await updateDoc(doc(db, "users", profile.uid), {
+                        partnerId: null,
+                        coupleId: profile.uid // ดึงกลับมาใช้กระเป๋าตัวเอง
+                      });
+                      alert("ยกเลิกการเชื่อมต่อสำเร็จ");
+                      window.location.reload();
+                    } catch (e) {
+                      console.error(e);
+                      alert("เกิดข้อผิดพลาด");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }
+                }}
+                style={{
+                  width: "100%", padding: "10px", borderRadius: 10,
+                  background: token.dangerBg, color: token.danger,
+                  border: `1px solid #F5C6C2`, cursor: "pointer",
+                  fontSize: 13, fontWeight: 500, fontFamily: "inherit"
+                }}
+              >
+                ยกเลิกการเชื่อมต่อกับแฟน (Reset)
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${token.border}` }}>
+              <p style={{ ...t.tiny, color: token.danger, fontWeight: 500, marginBottom: 12 }}>
+                ยังไม่ได้เชื่อมต่อกับแฟน
+              </p>
+              <button
+                onClick={() => router.push("/setup")}
+                style={{
+                  width: "100%", padding: "10px", borderRadius: 10,
+                  background: token.surface, color: token.textPrimary,
+                  border: `1px solid ${token.border}`, cursor: "pointer",
+                  fontSize: 13, fontWeight: 500, fontFamily: "inherit"
+                }}
+              >
+                ไปหน้าตั้งค่าเพื่อเชื่อมต่อแฟน
+              </button>
+            </div>
           )}
         </Card>
       </section>

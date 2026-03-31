@@ -1,17 +1,22 @@
-export interface UserProfile {
-  uid: string
-  displayName: string
-  email: string
-  photoURL?: string
-  monthlyIncome: number
-  paydayType: "date" | "end_of_month"
-  paydayDate?: number
-  expenseBuffer: number      // ← เปลี่ยนจาก fixedExpenses เป็น buffer ปรับได้
-  coupleId?: string
-  partnerId?: string
-  onboardingDone: boolean
-  lineNotifyToken?: string   // ← LINE Notify
-}
+import { z } from "zod";
+
+export const UserProfileSchema = z.object({
+  uid: z.string(),
+  displayName: z.string().default("ผู้ใช้งาน"),
+  email: z.string().default(""),
+  photoURL: z.string().optional(),
+  monthlyIncome: z.number().default(0),
+  paydayType: z.enum(["date", "end_of_month"]).default("end_of_month"),
+  paydayDate: z.number().optional(),
+  expenseBuffer: z.number().default(0),
+  coupleId: z.string().optional(),
+  partnerId: z.string().optional(),
+  onboardingDone: z.boolean().default(false),
+  lineNotifyToken: z.string().optional(),
+  schemaVersion: z.number().default(1),
+});
+
+export type UserProfile = z.infer<typeof UserProfileSchema>;
 
 export type BucketType =
   | "needs"
