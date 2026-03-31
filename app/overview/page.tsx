@@ -112,10 +112,10 @@ export default function OverviewPage() {
 
   const todayStr        = format(new Date(), "yyyy-MM-dd");
   const myToday         = myRegularTxs
-    .filter((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr)
+    .filter((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr && tx.category !== "รายรับพิเศษ")
     .reduce((s, tx) => s + tx.amount, 0);
   const partnerToday    = partnerRegTxs
-    .filter((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr)
+    .filter((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr && tx.category !== "รายรับพิเศษ")
     .reduce((s, tx) => s + tx.amount, 0);
   const partnerRecorded = partnerRegTxs
     .some((tx) => format(tx.createdAt, "yyyy-MM-dd") === todayStr);
