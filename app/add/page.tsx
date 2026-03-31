@@ -145,7 +145,8 @@ export default function AddPage() {
         ...(bucketId ? { bucketId } : {}),
       };
 
-      await addDoc(collection(db, "transactions"), txData);
+      // [Shared] Transactions should be in couples/{coupleId}/transactions
+      await addDoc(collection(db, "couples", profile.coupleId, "transactions"), txData);
       
       setDone(true);
       setAmount(""); setCat(null); setNote(""); setSuggested(null);

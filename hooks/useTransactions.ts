@@ -22,9 +22,10 @@ export function useTransactions(
     // Use current date to determine current period, don't strictly filter yet
     const periodStart = getPayPeriodStart(paydayType, paydayDate);
 
+    // [Shared] Transactions should be in couples/{coupleId}/transactions
     const q = query(
-      collection(db, "transactions"),
-      where("coupleId", "==", coupleId)
+      collection(db, "couples", coupleId, "transactions")
+      // where("coupleId", "==", coupleId) // No longer needed as it's scoped to the couple
       // orderBy("createdAt", "desc") // Remove to avoid needing composite index
     );
 
