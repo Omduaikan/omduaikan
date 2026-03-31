@@ -34,6 +34,8 @@ export default function SetupPage() {
     setSaving(true);
     try {
       let coupleId = inviteCode.trim();
+      let partnerId: string | undefined = undefined;
+
       if (!coupleId) {
         coupleId = user.uid;
         await setDoc(doc(db, "couples", coupleId), {
@@ -42,7 +44,12 @@ export default function SetupPage() {
           createdAt: new Date(),
         }, { merge: true });
       } else {
+        // อัปเดต couple doc
         await setDoc(doc(db, "couples", coupleId), { member2: user.uid }, { merge: true });
+        partnerId = coupleId; // ถ้ารับ invite มาจากแฟน, uid ของแฟนก็คือ coupleId นั่นเอง
+        
+        // แอบอัปเดต profile ของแฟนด้วย เพื่อให้แฟนรู้ว่าเราเข้ามาจอยแล้ว
+        await setDoc(doc(db, "users", partnerId), { partnerId: user.uid }, { merge: true });
       }
 
       const profile = {
@@ -55,6 +62,7 @@ export default function SetupPage() {
         ...(paydayType === "date" ? { paydayDate: parseInt(paydayDate) } : {}),
         expenseBuffer: expenseNum, // ตอนนี้เป็น float แล้ว
         coupleId,
+        ...(partnerId ? { partnerId } : {}),
         onboardingDone: false,
       };
 

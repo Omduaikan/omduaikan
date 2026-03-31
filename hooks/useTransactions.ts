@@ -19,8 +19,8 @@ export function useTransactions(
   useEffect(() => {
     if (!coupleId) return;
 
+    // Use current date to determine current period, don't strictly filter yet
     const periodStart = getPayPeriodStart(paydayType, paydayDate);
-    const payPeriodKey = getPayPeriodKey(periodStart);
 
     const q = query(
       collection(db, "transactions"),
@@ -33,14 +33,14 @@ export function useTransactions(
         const mappedTxs = snap.docs.map((d) => {
           const data = d.data();
           
-          // Safe date parsing to prevent crashes with legacy data
+          // Safe date parsing
           const createdAt = data.createdAt instanceof Timestamp 
             ? data.createdAt.toDate() 
             : new Date();
             
           const payPeriodStart = data.payPeriodStart instanceof Timestamp
             ? data.payPeriodStart.toDate()
-            : periodStart; // Fallback to current period start if missing
+            : periodStart; 
 
           return {
             id: d.id,
@@ -50,7 +50,7 @@ export function useTransactions(
           } as Transaction;
         });
         
-        // Filter transactions for the current period
+        // Only return transactions for the current viewing period
         const filtered = mappedTxs.filter((tx) => tx.createdAt >= periodStart);
         
         setTransactions(filtered);
