@@ -178,7 +178,7 @@ export default function GoalsPage() {
           border: `1px dashed ${token.border}`, borderRadius: 16,
         }}>
           <p style={{ ...t.small, color: token.textHint }}>ยังไม่มีเป้าหมาย</p>
-          <p style={{ ...t.tiny, marginTop: 6 }}>กด "เพิ่มเป้าหมาย" เพื่อเริ่มออมเพื่อสิ่งที่อยากได้</p>
+          <p style={{ ...t.tiny, marginTop: 6 }}>กด &quot;เพิ่มเป้าหมาย&quot; เพื่อเริ่มออมเพื่อสิ่งที่อยากได้</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>

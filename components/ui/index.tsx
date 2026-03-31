@@ -175,7 +175,7 @@ export function Input({
   prefix?: string;
   style?: React.CSSProperties;
   step?: string;
-  inputMode?: any;
+  inputMode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
 }) {
   return (
     <div

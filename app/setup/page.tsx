@@ -105,7 +105,7 @@ export default function SetupPage() {
             ].map((opt) => (
               <button
                 key={opt.val}
-                onClick={() => setPaydayType(opt.val as any)}
+                onClick={() => setPaydayType(opt.val as "end_of_month" | "date")}
                 style={{
                   textAlign: "left", padding: "16px 18px",
                   border: `1px solid ${paydayType === opt.val ? token.textPrimary : token.border}`,

@@ -13,23 +13,24 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    async function checkStatus(uid: string) {
+      const snap = await getDoc(doc(db, "users", uid));
+      if (!snap.exists()) router.replace("/setup");
+      else if (!snap.data()?.onboardingDone) router.replace("/onboarding");
+      else router.replace("/overview");
+    }
+
     if (loading) return;
     if (user) checkStatus(user.uid);
-  }, [user, loading]);
-
-  async function checkStatus(uid: string) {
-    const snap = await getDoc(doc(db, "users", uid));
-    if (!snap.exists()) router.replace("/setup");
-    else if (!snap.data().onboardingDone) router.replace("/onboarding");
-    else router.replace("/overview");
-  }
+  }, [user, loading, router]);
 
   async function handleLogin() {
     try { 
       await signInWithPopup(auth, googleProvider); 
-    } catch (e: any) { 
+    } catch (e: unknown) { 
       // ดักจับ error ที่เกิดจากการปิดป๊อปอัปโดยผู้ใช้
-      if (e.code === 'auth/popup-closed-by-user') {
+      const err = e as { code?: string };
+      if (err.code === 'auth/popup-closed-by-user') {
         console.log("Login popup closed by user.");
         return; 
       }
