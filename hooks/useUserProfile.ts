@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, onSnapshot, getDoc, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, getDoc, updateDoc, setDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { UserProfile } from "@/types";
@@ -17,59 +17,81 @@ export function useUserProfile() {
     const unsub = onSnapshot(doc(db, "users", user.uid), async (snap) => {
       if (snap.exists()) {
         const data = snap.data() as UserProfile;
+        
+        // ── SUPER HEALER FOR SPLIT BRAIN ──
+        try {
+          // 1. กรณีที่ coupleId ของเราดันไปเป็น UID ของแฟน (หลงไปอยู่คนละกล่องเพราะบั๊กเก่า)
+          if (data.coupleId && data.coupleId !== data.partnerId) {
+            const checkUserDoc = await getDoc(doc(db, "users", data.coupleId));
+            if (checkUserDoc.exists() && checkUserDoc.id !== user.uid) {
+              // เจอแล้ว! coupleId ของเราคือ UID ของแฟนจริงๆ
+              const pData = checkUserDoc.data() as UserProfile;
+              const realCoupleId = pData.coupleId; // ดึงกล่อง A (ของแท้) ของแฟนมา
 
-        // ── Auto-Heal: ซ่อมแซมข้อมูลบัญชีเก่าที่ไม่มี partnerId ──
-        if (data.coupleId && !data.partnerId) {
-          try {
-            const coupleSnap = await getDoc(doc(db, "couples", data.coupleId));
-            if (coupleSnap.exists()) {
-              const coupleData = coupleSnap.data();
-              const m1 = coupleData.member1;
-              const m2 = coupleData.member2;
-              
-              let foundPartner = null;
-              if (user.uid === m1 && m2) foundPartner = m2;
-              if (user.uid === m2 && m1) foundPartner = m1;
-
-              // ถ้าเจอ UID แฟนแล้ว ให้อัปเดตเข้า profile ทันที
-              if (foundPartner) {
-                await updateDoc(doc(db, "users", user.uid), { partnerId: foundPartner });
-                data.partnerId = foundPartner; // อัปเดต state ในเครื่องทันทีไม่ต้องรอโหลดใหม่
-                console.log("Auto-healed missing partnerId:", foundPartner);
-              }
-            }
-          } catch (err) {
-            console.error("Auto-heal failed:", err);
-          }
-        }
-
-        // ── Auto-Heal 2: ซ่อมแซม coupleId ไม่ตรงกัน (เนื่องจากบั๊กเก่าตอน Setup) ──
-        if (data.partnerId) {
-          try {
-            const partnerSnap = await getDoc(doc(db, "users", data.partnerId));
-            if (partnerSnap.exists()) {
-              const partnerData = partnerSnap.data() as UserProfile;
-              // ถ้า coupleId ของเราไม่ตรงกับของแฟน
-              if (partnerData.coupleId && data.coupleId !== partnerData.coupleId) {
-                // ให้ยึด coupleId ของคนที่สมัครก่อน (โดยเช็คว่า coupleId ของใครไม่ใช่ UID ของอีกคน)
-                // หรือถ้ายึดไม่ได้ ก็ยึดของคนที่เป็นเจ้าของ couple doc 
-                let correctCoupleId = partnerData.coupleId;
+              if (realCoupleId) {
+                console.log("Super Heal: Fixing orphan user pointing to UID instead of couple doc");
                 
-                // ถ้า coupleId ของเรา ไปตรงกับ UID ของแฟน แสดงว่าเราเพิ่ง join ทีหลังด้วย UID แฟน (ซึ่งเป็นบั๊ก)
-                if (data.coupleId === partnerData.uid) {
-                  correctCoupleId = partnerData.coupleId;
-                  await updateDoc(doc(db, "users", user.uid), { coupleId: correctCoupleId });
-                  data.coupleId = correctCoupleId;
-                  console.log("Auto-healed mismatched coupleId to match partner:", correctCoupleId);
+                // 1.1 อัปเดตโปรไฟล์ตัวเองให้ชี้ไปที่กล่อง A และผูก partnerId
+                await updateDoc(doc(db, "users", user.uid), {
+                  partnerId: pData.uid,
+                  coupleId: realCoupleId
+                });
+                data.partnerId = pData.uid;
+                data.coupleId = realCoupleId;
+
+                // 1.2 เอาชื่อตัวเองไปใส่ในกล่อง A (couples doc ของจริง)
+                await setDoc(doc(db, "couples", realCoupleId), {
+                  member2: user.uid
+                }, { merge: true });
+
+                // 1.3 บังคับให้โปรไฟล์แฟนชี้กลับมาหาเราด้วย (เผื่อแฟนยังไม่มี partnerId)
+                if (pData.partnerId !== user.uid) {
+                  await updateDoc(doc(db, "users", pData.uid), {
+                    partnerId: user.uid
+                  });
+                }
+
+                // 1.4 ย้ายรายการที่จดผิดกล่อง (กล่อง B) มารวมในกล่อง A ให้หมด
+                const txQuery = query(collection(db, "transactions"), where("userId", "==", user.uid), where("coupleId", "==", checkUserDoc.id));
+                const txSnaps = await getDocs(txQuery);
+                if (!txSnaps.empty) {
+                  const batch = writeBatch(db);
+                  txSnaps.forEach(tx => {
+                    batch.update(tx.ref, { coupleId: realCoupleId });
+                  });
+                  await batch.commit();
+                  console.log("Migrated stray txs to", realCoupleId);
                 }
               }
             }
-          } catch (err) {
-            console.error("Auto-heal 2 failed:", err);
           }
+
+          // 2. กรณีมี partnerId แต่ coupleId ไม่ตรงกัน
+          if (data.partnerId) {
+            const pSnap = await getDoc(doc(db, "users", data.partnerId));
+            if (pSnap.exists()) {
+              const pData = pSnap.data() as UserProfile;
+              if (pData.coupleId && data.coupleId !== pData.coupleId) {
+                // ยึด coupleId ของแฟนเป็นหลัก
+                const realCoupleId = pData.coupleId;
+                await updateDoc(doc(db, "users", user.uid), { coupleId: realCoupleId });
+                data.coupleId = realCoupleId;
+
+                await setDoc(doc(db, "couples", realCoupleId), { member2: user.uid }, { merge: true });
+                if (pData.partnerId !== user.uid) {
+                  await updateDoc(doc(db, "users", pData.uid), { partnerId: user.uid });
+                }
+              }
+            }
+          }
+
+        } catch (err) {
+          console.error("Super Heal failed:", err);
         }
 
-        setProfile(data);
+        setProfile({ ...data });
+      } else {
+        setProfile(null);
       }
       setLoading(false);
     });
