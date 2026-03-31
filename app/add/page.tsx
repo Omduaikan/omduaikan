@@ -125,17 +125,22 @@ export default function AddPage() {
       const periodStart = getPayPeriodStart(profile.paydayType, profile.paydayDate);
       const payPeriodKey = getPayPeriodKey(periodStart);
       
-      const txData = {
+      const bucketId = cat ? getBucketId(cat) : null;
+
+      const txData: any = {
         userId:         who === "me" ? user.uid : (profile.partnerId || user.uid),
         coupleId:       profile.coupleId,
         amount:         amountNum,
         category:       cat,
-        bucketId:       cat ? getBucketId(cat) : undefined,
         note:           note.trim() || null,
         createdAt:      Timestamp.now(),
         payPeriodStart: Timestamp.fromDate(periodStart),
         payPeriodKey,
       };
+
+      if (bucketId) {
+        txData.bucketId = bucketId;
+      }
 
       await addDoc(collection(db, "transactions"), txData);
       
