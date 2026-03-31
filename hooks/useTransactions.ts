@@ -30,7 +30,7 @@ export function useTransactions(
 
     const unsub = onSnapshot(q, 
       (snap) => {
-        const txs = snap.docs.map((d) => {
+        const mappedTxs = snap.docs.map((d) => {
           const data = d.data();
           
           // Safe date parsing to prevent crashes with legacy data
@@ -42,18 +42,18 @@ export function useTransactions(
             ? data.payPeriodStart.toDate()
             : periodStart; // Fallback to current period start if missing
 
-          const filtered = txs.filter((tx) => tx.createdAt >= periodStart);
-setTransactions(filtered);
-
           return {
             id: d.id,
             ...data,
             createdAt,
             payPeriodStart,
-          };
-        }) as Transaction[];
+          } as Transaction;
+        });
         
-        setTransactions(txs);
+        // Filter transactions for the current period
+        const filtered = mappedTxs.filter((tx) => tx.createdAt >= periodStart);
+        
+        setTransactions(filtered);
         setLoading(false);
       },
       (error) => {

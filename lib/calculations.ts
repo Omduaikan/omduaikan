@@ -6,42 +6,42 @@ import { BucketType, BudgetStatus } from "@/types"
 
 export function getPayPeriodStart(
   paydayType: "date" | "end_of_month",
-  paydayDate: number | undefined,
+  paydayDate: number | undefined | string,
   from: Date = new Date()
 ): Date {
   if (paydayType === "end_of_month") {
     return endOfMonth(addMonths(from, -1))
   }
-  const day = paydayDate ?? 25
-  const thisMonthPayday = setDate(from, day)
+  const day = typeof paydayDate === 'string' ? parseInt(paydayDate, 10) : (paydayDate ?? 25)
+  const thisMonthPayday = setDate(from, day || 25)
   return from >= thisMonthPayday
     ? thisMonthPayday
-    : setDate(addMonths(from, -1), day)
+    : setDate(addMonths(from, -1), day || 25)
 }
 
 export function getPayPeriodEnd(
   paydayType: "date" | "end_of_month",
-  paydayDate: number | undefined,
+  paydayDate: number | undefined | string,
   from: Date = new Date()
 ): Date {
   const start = getPayPeriodStart(paydayType, paydayDate, from)
   if (paydayType === "end_of_month") {
     return endOfMonth(addMonths(start, 1))
   }
-  const day = paydayDate ?? 25
-  return setDate(addMonths(start, 1), day - 1)
+  const day = typeof paydayDate === 'string' ? parseInt(paydayDate, 10) : (paydayDate ?? 25)
+  return setDate(addMonths(start, 1), (day || 25) - 1)
 }
 
 export function getDaysUntilPayday(
   paydayType: "date" | "end_of_month",
-  paydayDate: number | undefined
+  paydayDate: number | undefined | string
 ): number {
   return Math.max(differenceInDays(getPayPeriodEnd(paydayType, paydayDate), new Date()), 0)
 }
 
 export function getTotalDaysInPeriod(
   paydayType: "date" | "end_of_month",
-  paydayDate: number | undefined
+  paydayDate: number | undefined | string
 ): number {
   const start = getPayPeriodStart(paydayType, paydayDate)
   const end   = getPayPeriodEnd(paydayType, paydayDate)
@@ -54,7 +54,7 @@ export function getDailyBudget(
   expenseBuffer: number,
   savingTarget: number,
   paydayType: "date" | "end_of_month",
-  paydayDate: number | undefined
+  paydayDate: number | undefined | string
 ): number {
   const totalDays = getTotalDaysInPeriod(paydayType, paydayDate)
   const spendable = monthlyIncome - expenseBuffer - savingTarget
@@ -68,7 +68,7 @@ export function getDailyBudgetLeft(
   savingTarget: number,
   totalSpentThisPeriod: number,
   paydayType: "date" | "end_of_month",
-  paydayDate: number | undefined
+  paydayDate: number | undefined | string
 ): number {
   const today      = new Date()
   const periodEnd  = getPayPeriodEnd(paydayType, paydayDate, today)
@@ -95,7 +95,7 @@ export function getProjectedSavings(
   expenseBuffer: number,
   totalSpentSoFar: number,
   paydayType: "date" | "end_of_month",
-  paydayDate: number | undefined
+  paydayDate: number | undefined | string
 ): number {
   const today        = new Date()
   const start        = getPayPeriodStart(paydayType, paydayDate, today)
