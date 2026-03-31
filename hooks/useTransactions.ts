@@ -24,8 +24,8 @@ export function useTransactions(
 
     const q = query(
       collection(db, "transactions"),
-      where("coupleId", "==", coupleId),
-      orderBy("createdAt", "desc")
+      where("coupleId", "==", coupleId)
+      // orderBy("createdAt", "desc") // Remove to avoid needing composite index
     );
 
     const unsub = onSnapshot(q, 
@@ -50,6 +50,9 @@ export function useTransactions(
           } as Transaction;
         });
         
+        // Sort in memory instead of Firestore to avoid index requirement
+        mappedTxs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
         // Only return transactions for the current viewing period
         const filtered = mappedTxs.filter((tx) => tx.createdAt >= periodStart);
         

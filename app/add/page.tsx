@@ -116,26 +116,36 @@ export default function AddPage() {
   }
 
   async function handleSave() {
-    if (!canSave || !user || !profile?.coupleId) return;
+    if (!canSave || !user || !profile?.coupleId) {
+      if (!profile?.coupleId) alert("ไม่พบรหัสคู่รัก กรุณาลองล็อกอินใหม่หรือตั้งค่าคู่รัก");
+      return;
+    }
     setSaving(true);
     try {
       const periodStart = getPayPeriodStart(profile.paydayType, profile.paydayDate);
       const payPeriodKey = getPayPeriodKey(periodStart);
-      await addDoc(collection(db, "transactions"), {
-        userId:         who === "me" ? user.uid : (profile.partnerId ?? user.uid),
+      
+      const txData = {
+        userId:         who === "me" ? user.uid : (profile.partnerId || user.uid),
         coupleId:       profile.coupleId,
-        amount:         amountNum, // ตอนนี้จะเป็น float แล้ว
+        amount:         amountNum,
         category:       cat,
         bucketId:       cat ? getBucketId(cat) : undefined,
         note:           note.trim() || null,
         createdAt:      Timestamp.now(),
         payPeriodStart: Timestamp.fromDate(periodStart),
         payPeriodKey,
-      });
+      };
+
+      await addDoc(collection(db, "transactions"), txData);
+      
       setDone(true);
       setAmount(""); setCat(null); setNote(""); setSuggested(null);
       setTimeout(() => { setDone(false); router.push("/overview"); }, 800);
-    } catch (e) { console.error(e); }
+    } catch (e: any) { 
+      console.error(e);
+      alert("บันทึกไม่สำเร็จ: " + (e.message || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ"));
+    }
     finally { setSaving(false); }
   }
 
