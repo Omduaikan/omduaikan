@@ -1,5 +1,5 @@
 import {
-  endOfMonth, setDate, addMonths,
+  endOfMonth, setDate, addMonths, startOfDay,
   differenceInDays, format,
 } from "date-fns"
 import { BucketType, BudgetStatus } from "@/types"
@@ -9,14 +9,17 @@ export function getPayPeriodStart(
   paydayDate: number | undefined | string,
   from: Date = new Date()
 ): Date {
+  // ทำให้ from เริ่มต้นที่ 00:00:00 เสมอ เพื่อไม่ให้มีปัญหาในการเปรียบเทียบเวลา
+  const fromStartOfDay = startOfDay(from);
+
   if (paydayType === "end_of_month") {
-    return endOfMonth(addMonths(from, -1))
+    return endOfMonth(addMonths(fromStartOfDay, -1))
   }
   const day = typeof paydayDate === 'string' ? parseInt(paydayDate, 10) : (paydayDate ?? 25)
-  const thisMonthPayday = setDate(from, day || 25)
-  return from >= thisMonthPayday
+  const thisMonthPayday = setDate(fromStartOfDay, day || 25)
+  return fromStartOfDay >= thisMonthPayday
     ? thisMonthPayday
-    : setDate(addMonths(from, -1), day || 25)
+    : setDate(addMonths(fromStartOfDay, -1), day || 25)
 }
 
 export function getPayPeriodEnd(

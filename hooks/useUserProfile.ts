@@ -43,6 +43,32 @@ export function useUserProfile() {
           }
         }
 
+        // ── Auto-Heal 2: ซ่อมแซม coupleId ไม่ตรงกัน (เนื่องจากบั๊กเก่าตอน Setup) ──
+        if (data.partnerId) {
+          try {
+            const partnerSnap = await getDoc(doc(db, "users", data.partnerId));
+            if (partnerSnap.exists()) {
+              const partnerData = partnerSnap.data() as UserProfile;
+              // ถ้า coupleId ของเราไม่ตรงกับของแฟน
+              if (partnerData.coupleId && data.coupleId !== partnerData.coupleId) {
+                // ให้ยึด coupleId ของคนที่สมัครก่อน (โดยเช็คว่า coupleId ของใครไม่ใช่ UID ของอีกคน)
+                // หรือถ้ายึดไม่ได้ ก็ยึดของคนที่เป็นเจ้าของ couple doc 
+                let correctCoupleId = partnerData.coupleId;
+                
+                // ถ้า coupleId ของเรา ไปตรงกับ UID ของแฟน แสดงว่าเราเพิ่ง join ทีหลังด้วย UID แฟน (ซึ่งเป็นบั๊ก)
+                if (data.coupleId === partnerData.uid) {
+                  correctCoupleId = partnerData.coupleId;
+                  await updateDoc(doc(db, "users", user.uid), { coupleId: correctCoupleId });
+                  data.coupleId = correctCoupleId;
+                  console.log("Auto-healed mismatched coupleId to match partner:", correctCoupleId);
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Auto-heal 2 failed:", err);
+          }
+        }
+
         setProfile(data);
       }
       setLoading(false);
