@@ -74,6 +74,8 @@ export default function OverviewPage() {
   
   // คำนวณยอดที่ใช้ไป โดยถ้าเป็น "รายรับพิเศษ" ให้นำไปลบออกจากยอดที่ใช้ (ทำให้ยอดใช้น้อยลง = มีเงินเหลือมากขึ้น)
   const mySpent        = myRegularTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
+  const partnerSpent   = partnerRegTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
+  const totalSpent     = mySpent + partnerSpent;
 
   // ยอดเงินออมที่บันทึกผ่านปุ่ม + (ของทั้งคู่รวมกัน)
   const actualSavedTxs = transactions.filter(tx => tx.category === "เงินออม & ลงทุน");
@@ -83,9 +85,13 @@ export default function OverviewPage() {
     .filter((b) => ["savings", "emergency", "investment"].includes(b.type))
     .reduce((s, b) => s + b.targetAmount, 0);
 
-  const netIncome   = profile.monthlyIncome - profile.expenseBuffer;
-  // เงินที่ "น่าจะ" เก็บได้จากยอดที่เหลือ (Passive)
-  const potentialSaved = Math.max(netIncome - mySpent, 0); 
+  // --- การคำนวณแบบใหม่: Savings รวมทั้งคู่ ---
+  const totalIncome = profile.monthlyIncome + (partnerProfile?.monthlyIncome ?? 0);
+  const totalBuffer = profile.expenseBuffer + (partnerProfile?.expenseBuffer ?? 0);
+  const totalNet    = totalIncome - totalBuffer;
+  
+  // เงินที่ "น่าจะ" เก็บได้จากยอดที่เหลือของทั้งคู่ (Shared Passive)
+  const potentialSaved = Math.max(totalNet - totalSpent, 0); 
   // ใช้ยอดที่บันทึกจริงมาแสดง ถ้ามีการบันทึก แต่ถ้ายังไม่บันทึก ให้ดูยอด potential
   const displaySaved  = actualSavedAmount > 0 ? actualSavedAmount : potentialSaved;
   
@@ -94,17 +100,19 @@ export default function OverviewPage() {
   
   const daysLeft    = getDaysUntilPayday(profile.paydayType, profile.paydayDate);
   const projected   = getProjectedSavings(
-    profile.monthlyIncome, profile.expenseBuffer, mySpent,
+    totalIncome, totalBuffer, totalSpent, // คาดการณ์จากยอดรวมทั้งคู่
     profile.paydayType, profile.paydayDate
   );
   
-  // dailyBudget ใช้ mySpent ที่ไม่รวมเงินออม เพราะ savingTarget ถูกหักไปแล้วในสูตร
+  // dailyBudget ยังเป็นส่วนตัว: ใช้ mySpent ที่ไม่รวมเงินออม เพราะ savingTarget ถูกหักไปแล้วในสูตร
+  // หมายเหตุ: dailyBudget จะอิงตามเป้าออมส่วนตัวที่ "ควรจะเป็น" (proportion) หรือตามเป้าของคู่ที่หารครึ่ง? 
+  // เบื้องต้นใช้ savingTarget ของคู่มาหักออกจากรายได้ตัวเองไปก่อน เพื่อให้เห็นงบที่ปลอดภัยที่สุด
   const dailyBudget = getDailyBudget(
-    profile.monthlyIncome, profile.expenseBuffer, savingTarget,
+    profile.monthlyIncome, profile.expenseBuffer, savingTarget / 2, // แบ่งเป้าออมคนละครึ่งมาคำนวณงบรายวัน
     profile.paydayType, profile.paydayDate
   );
   const dailyLeft   = getDailyBudgetLeft(
-    profile.monthlyIncome, profile.expenseBuffer, savingTarget, mySpent,
+    profile.monthlyIncome, profile.expenseBuffer, savingTarget / 2, mySpent,
     profile.paydayType, profile.paydayDate
   );
   const status    = getBudgetStatus(dailyLeft, dailyBudget);

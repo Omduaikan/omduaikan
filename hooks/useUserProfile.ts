@@ -54,4 +54,32 @@ export function useUserProfile() {
   }, [user]);
 
   return { profile, loading };
-}
+  }
+
+  export function usePartnerProfile(partnerId: string | undefined) {
+  const [partnerProfile, setPartnerProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!partnerId) {
+      setLoading(false);
+      return;
+    }
+
+    const unsub = onSnapshot(doc(db, "users", partnerId), (snap) => {
+      if (snap.exists()) {
+        const rawData = snap.data();
+        const parsedData = UserProfileSchema.safeParse(rawData);
+        const data = parsedData.success ? parsedData.data : (rawData as UserProfile);
+        setPartnerProfile(data);
+      } else {
+        setPartnerProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsub();
+  }, [partnerId]);
+
+  return { partnerProfile, loading };
+  }
