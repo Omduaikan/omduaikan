@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
+import { doc, updateDoc, collection, setDoc, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -29,7 +29,6 @@ export default function OnboardingPage() {
   const [recs, setRecs]         = useState<BucketRecommendation[]>([]);
   const [percents, setPercents] = useState<Record<string, number>>({});
 
-  // แก้ไข: เปลี่ยนจาก fixedExpenses เป็น expenseBuffer ให้ตรงกับข้อมูลใน Firebase/UserProfile
   const totalIncome   = profile?.monthlyIncome ?? 0;
   const fixedExpenses = profile?.expenseBuffer ?? 0;
   const netIncome     = totalIncome - fixedExpenses;
@@ -66,20 +65,32 @@ export default function OnboardingPage() {
     setSaving(true);
     try {
       const ref = collection(db, "couples", profile.coupleId, "buckets");
+      
+      // [Prevention] Clean up existing buckets first to avoid duplicates
+      const snap = await getDocs(ref);
+      const batch = writeBatch(db);
+      snap.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+
+      // [Shared] Save buckets with fixed IDs (type) to ensure only one of each exists
       await Promise.all(
-        recs.map((r, i) =>
-          addDoc(ref, {
-            type: r.type, name: r.name,
+        recs.map((r, i) => {
+          const bucketDocRef = doc(db, "couples", profile.coupleId, "buckets", r.type);
+          return setDoc(bucketDocRef, {
+            type: r.type, 
+            name: r.name,
             targetPercent: percents[r.type] ?? r.percent,
             targetAmount: calcBucketAmount(netIncome, percents[r.type] ?? r.percent),
             currentAmount: 0,
             color: BUCKET_DEFAULTS[r.type].color,
             icon: BUCKET_DEFAULTS[r.type].icon,
-            order: i, coupleId: profile.coupleId,
+            order: i, 
+            coupleId: profile.coupleId,
             createdAt: new Date(),
-          })
-        )
+          });
+        })
       );
+
       await updateDoc(doc(db, "users", user.uid), { onboardingDone: true });
       router.replace("/overview");
     } catch (e) { console.error(e); }
