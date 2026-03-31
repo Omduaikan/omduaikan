@@ -120,6 +120,12 @@ export default function AddPage() {
       if (!profile?.coupleId) alert("ไม่พบรหัสคู่รัก กรุณาลองล็อกอินใหม่หรือตั้งค่าคู่รัก");
       return;
     }
+
+    if (who === "partner" && !profile.partnerId) {
+      alert("คุณยังไม่ได้เชื่อมต่อบัญชีกับแฟน ไม่สามารถบันทึกรายการแทนแฟนได้ครับ");
+      return;
+    }
+
     setSaving(true);
     try {
       const periodStart = getPayPeriodStart(profile.paydayType, profile.paydayDate);
