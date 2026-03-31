@@ -78,30 +78,36 @@ export default function OverviewPage() {
   const partnerSpent   = partnerRegTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
   const totalSpent     = mySpent + partnerSpent;
 
-  // ยอดเงินออมที่บันทึกผ่านปุ่ม + (ของทั้งคู่รวมกัน)
+  // ยอดเงินออมที่บันทึกผ่านปุ่ม + แยกรายคน
   const actualSavedTxs = transactions.filter(tx => tx.category === "เงินออม & ลงทุน");
-  const actualSavedAmount = actualSavedTxs.reduce((s, tx) => s + tx.amount, 0);
+  const myActualSaved = actualSavedTxs.filter(tx => tx.userId === user!.uid).reduce((s, tx) => s + tx.amount, 0);
+  const partnerActualSaved = actualSavedTxs.filter(tx => tx.userId !== user!.uid).reduce((s, tx) => s + tx.amount, 0);
+  const totalActualSaved = myActualSaved + partnerActualSaved;
+
+  // --- ยอดเงินคงเหลือจริง (Bank Balance Style) ---
+  const myNetIncome = profile.monthlyIncome - profile.expenseBuffer;
+  const myBalance   = myNetIncome - mySpent - myActualSaved;
+
+  const partnerNetIncome = partnerProfile ? (partnerProfile.monthlyIncome - partnerProfile.expenseBuffer) : 0;
+  const partnerBalance   = partnerNetIncome - partnerSpent - partnerActualSaved;
 
   const savingTarget = buckets
     .filter((b) => ["savings", "emergency", "investment"].includes(b.type))
     .reduce((s, b) => s + b.targetAmount, 0);
 
-  // --- การคำนวณแบบใหม่: Savings รวมทั้งคู่ ---
-  const totalIncome = profile.monthlyIncome + (partnerProfile?.monthlyIncome ?? 0);
-  const totalBuffer = profile.expenseBuffer + (partnerProfile?.expenseBuffer ?? 0);
-  const totalNet    = totalIncome - totalBuffer;
-  
-  // เงินที่ "น่าจะ" เก็บได้จากยอดที่เหลือของทั้งคู่ (Shared Passive)
-  const potentialSaved = Math.max(totalNet - totalSpent, 0); 
-  // ใช้ยอดที่บันทึกจริงมาแสดง ถ้ามีการบันทึก แต่ถ้ายังไม่บันทึก ให้ดูยอด potential
-  const displaySaved  = actualSavedAmount > 0 ? actualSavedAmount : potentialSaved;
+  // --- การคำนวณเพื่อแสดงผล Progress ---
+  const totalNet = myNetIncome + partnerNetIncome;
+  const potentialSaved = Math.max(totalNet - totalSpent, 0);
+  const displaySaved = totalActualSaved > 0 ? totalActualSaved : potentialSaved;
   
   const savingPct   = savingTarget > 0
     ? Math.min(Math.round((displaySaved / savingTarget) * 100), 100) : 0;
   
   const daysLeft    = getDaysUntilPayday(profile.paydayType, profile.paydayDate);
   const projected   = getProjectedSavings(
-    totalIncome, totalBuffer, totalSpent, 
+    myNetIncome + profile.expenseBuffer + (partnerProfile?.monthlyIncome ?? 0), 
+    profile.expenseBuffer + (partnerProfile?.expenseBuffer ?? 0), 
+    totalSpent, 
     profile.paydayType, profile.paydayDate
   );
   
@@ -132,7 +138,6 @@ export default function OverviewPage() {
     : hour < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
   const topGoal  = goals.filter((g) => !g.completed)[0];
 
-  // ชื่อ — ลบอักขระพิเศษ fallback เป็น "คุณ"
   const firstName = profile.displayName
     ?.replace(/[^ก-๙a-zA-Z\s]/g, "")
     ?.split(" ")[0]
@@ -149,7 +154,7 @@ export default function OverviewPage() {
         <p style={{ ...t.h1, margin: 0 }}>{firstName}</p>
       </div>
 
-      {/* ── Budget Overview (พื้นที่รายได้/งบประมาณ) ── */}
+      {/* ── Budget Overview (พื้นที่รายได้/งบประมาณ แบบสมุดบัญชี) ── */}
       {savingTarget === 0 ? (
         <div style={{
           background: token.accentBg,
@@ -178,47 +183,41 @@ export default function OverviewPage() {
           border: `1px solid ${token.border}`,
           borderRadius: 20, padding: "22px", marginBottom: 12,
         }}>
-          <p style={{ ...t.tiny, textTransform: "uppercase", marginBottom: 16 }}>งบประมาณรอบนี้</p>
+          <p style={{ ...t.tiny, textTransform: "uppercase", marginBottom: 16 }}>ยอดเงินคงเหลือเดือนนี้</p>
           
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-            <div>
-              <Label>ฉัน (รายได้สุทธิ)</Label>
-              <p style={{ fontSize: 18, fontWeight: 500, margin: "4px 0 0" }}>
-                ฿{(profile.monthlyIncome - profile.expenseBuffer).toLocaleString()}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            {/* กล่องเงินฉัน */}
+            <div style={{ background: token.surfaceAlt, borderRadius: 16, padding: "14px" }}>
+              <Label>ฉันเหลือเงินใช้</Label>
+              <p style={{ fontSize: 22, fontWeight: 600, margin: "4px 0 0", color: token.textPrimary }}>
+                ฿{myBalance.toLocaleString()}
               </p>
+              <div style={{ marginTop: 8, borderTop: `1px solid ${token.border}`, paddingTop: 8 }}>
+                <p style={{ ...t.tiny, color: token.textHint }}>จาก ฿{myNetIncome.toLocaleString()}</p>
+                <p style={{ ...t.tiny, color: token.textHint }}>ออม ฿{myActualSaved.toLocaleString()}</p>
+              </div>
             </div>
-            <div>
-              <Label>แฟน (รายได้สุทธิ)</Label>
-              <p style={{ fontSize: 18, fontWeight: 500, margin: "4px 0 0" }}>
-                {partnerProfile 
-                  ? `฿${(partnerProfile.monthlyIncome - partnerProfile.expenseBuffer).toLocaleString()}`
-                  : "ยังไม่ระบุ"}
-              </p>
-            </div>
-          </div>
 
-          <div style={{ 
-            background: token.surfaceAlt, borderRadius: 12, padding: "14px 16px",
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            marginBottom: 20
-          }}>
-            <div>
-              <Label>รายจ่ายรวมคู่</Label>
-              <p style={{ fontSize: 16, fontWeight: 500, margin: "2px 0 0", color: token.danger }}>
-                −฿{totalSpent.toLocaleString()}
+            {/* กล่องเงินแฟน */}
+            <div style={{ background: token.surfaceAlt, borderRadius: 16, padding: "14px" }}>
+              <Label>แฟนเหลือเงินใช้</Label>
+              <p style={{ fontSize: 22, fontWeight: 600, margin: "4px 0 0", color: token.textPrimary }}>
+                {partnerProfile ? `฿${partnerBalance.toLocaleString()}` : "—"}
               </p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <Label>เงินออมที่เหลือ</Label>
-              <p style={{ fontSize: 20, fontWeight: 600, margin: "2px 0 0", color: token.accent }}>
-                ฿{displaySaved.toLocaleString()}
-              </p>
+              <div style={{ marginTop: 8, borderTop: `1px solid ${token.border}`, paddingTop: 8 }}>
+                <p style={{ ...t.tiny, color: token.textHint }}>
+                  {partnerProfile ? `จาก ฿${partnerNetIncome.toLocaleString()}` : "ยังไม่เชื่อมต่อ"}
+                </p>
+                <p style={{ ...t.tiny, color: token.textHint }}>
+                  {partnerProfile ? `ออม ฿${partnerActualSaved.toLocaleString()}` : ""}
+                </p>
+              </div>
             </div>
           </div>
 
           <div style={{ borderTop: `1px solid ${token.border}`, paddingTop: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-              <p style={{ fontSize: 13, fontWeight: 500, color: token.textPrimary }}>ความคืบหน้าการออม</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: token.textPrimary }}>เก็บเข้าเป้าได้ (คู่)</p>
               <p style={{ ...t.tiny }}>เป้า ฿{savingTarget.toLocaleString()}</p>
             </div>
             <ProgressBar value={displaySaved} max={savingTarget} color={token.accent} />
@@ -325,7 +324,6 @@ export default function OverviewPage() {
                     ฿{remaining.toLocaleString()}
                   </p>
 
-                  {/* progress bar พร้อม label */}
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                     <p style={{ ...t.tiny }}>ใช้ {pct}%</p>
                     <p style={{ ...t.tiny }}>฿{spent.toLocaleString()}</p>
