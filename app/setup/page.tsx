@@ -45,7 +45,15 @@ export default function SetupPage() {
         }, { merge: true });
       } else {
         // อัปเดต couple doc
-        await setDoc(doc(db, "couples", coupleId), { member2: user.uid }, { merge: true });
+        // ดึงข้อมูล couple เดิมมาก่อนเพื่อเอารายได้มารวมกัน
+        const coupleSnap = await getDoc(doc(db, "couples", coupleId));
+        const existingIncome = coupleSnap.exists() ? (coupleSnap.data().totalMonthlyIncome || 0) : 0;
+        
+        await setDoc(doc(db, "couples", coupleId), { 
+          member2: user.uid,
+          totalMonthlyIncome: existingIncome + incomeNum
+        }, { merge: true });
+        
         partnerId = coupleId; // ถ้ารับ invite มาจากแฟน, uid ของแฟนก็คือ coupleId นั่นเอง
         
         // แอบอัปเดต profile ของแฟนด้วย เพื่อให้แฟนรู้ว่าเราเข้ามาจอยแล้ว
