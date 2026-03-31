@@ -221,8 +221,7 @@ export default function OverviewPage() {
               <p style={{ ...t.tiny }}>เป้า ฿{savingTarget.toLocaleString()}</p>
             </div>
             <ProgressBar value={displaySaved} max={savingTarget} color={token.accent} />
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-              <p style={{ ...t.tiny }}>อีก {daysLeft} วันเงินออก</p>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
               <p style={{ ...t.tiny, color: token.accent, fontWeight: 500 }}>{savingPct}% ของเป้า</p>
             </div>
           </div>
