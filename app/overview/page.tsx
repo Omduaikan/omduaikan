@@ -149,7 +149,7 @@ export default function OverviewPage() {
         <p style={{ ...t.h1, margin: 0 }}>{firstName}</p>
       </div>
 
-      {/* ── savings card หรือ CTA ถ้าไม่มีเป้า ── */}
+      {/* ── Budget Overview (พื้นที่รายได้/งบประมาณ) ── */}
       {savingTarget === 0 ? (
         <div style={{
           background: token.accentBg,
@@ -174,42 +174,58 @@ export default function OverviewPage() {
         </div>
       ) : (
         <div style={{
-          background: token.accentBg,
-          border: `1px solid ${token.accentLight}`,
-          borderRadius: 20, padding: "22px 22px 18px", marginBottom: 12,
+          background: token.surface,
+          border: `1px solid ${token.border}`,
+          borderRadius: 20, padding: "22px", marginBottom: 12,
         }}>
-          <div style={{
-            display: "flex", justifyContent: "space-between",
-            alignItems: "flex-start", marginBottom: 18,
-          }}>
+          <p style={{ ...t.tiny, textTransform: "uppercase", marginBottom: 16 }}>งบประมาณรอบนี้</p>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
             <div>
-              <Label>เก็บได้รอบนี้</Label>
-              <p style={{
-                fontSize: 40, fontWeight: 500, letterSpacing: "-1.5px",
-                color: token.accent, margin: "4px 0 0",
-              }}>
-                ฿{displaySaved.toLocaleString()}
-              </p>
-              <p style={{ ...t.tiny, marginTop: 4 }}>
-                เป้า ฿{savingTarget.toLocaleString()}
+              <Label>ฉัน (รายได้สุทธิ)</Label>
+              <p style={{ fontSize: 18, fontWeight: 500, margin: "4px 0 0" }}>
+                ฿{(profile.monthlyIncome - profile.expenseBuffer).toLocaleString()}
               </p>
             </div>
-            <div style={{
-              background: token.surface, borderRadius: 12,
-              padding: "10px 14px", textAlign: "center",
-            }}>
-              <p style={{ fontSize: 24, fontWeight: 500, color: token.accent, margin: 0 }}>
-                {savingPct}%
+            <div>
+              <Label>แฟน (รายได้สุทธิ)</Label>
+              <p style={{ fontSize: 18, fontWeight: 500, margin: "4px 0 0" }}>
+                {partnerProfile 
+                  ? `฿${(partnerProfile.monthlyIncome - partnerProfile.expenseBuffer).toLocaleString()}`
+                  : "ยังไม่ระบุ"}
               </p>
-              <p style={{ ...t.tiny, marginTop: 2 }}>ของเป้า</p>
             </div>
           </div>
-          <ProgressBar value={displaySaved} max={savingTarget} color={token.accent} />
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
-            <p style={{ ...t.tiny }}>เหลืออีก {daysLeft} วัน</p>
-            <p style={{ ...t.tiny }}>
-              คาดสิ้นรอบ ฿{Math.max(projected, 0).toLocaleString()}
-            </p>
+
+          <div style={{ 
+            background: token.surfaceAlt, borderRadius: 12, padding: "14px 16px",
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            marginBottom: 20
+          }}>
+            <div>
+              <Label>รายจ่ายรวมคู่</Label>
+              <p style={{ fontSize: 16, fontWeight: 500, margin: "2px 0 0", color: token.danger }}>
+                −฿{totalSpent.toLocaleString()}
+              </p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <Label>เงินออมที่เหลือ</Label>
+              <p style={{ fontSize: 20, fontWeight: 600, margin: "2px 0 0", color: token.accent }}>
+                ฿{displaySaved.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${token.border}`, paddingTop: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, color: token.textPrimary }}>ความคืบหน้าการออม</p>
+              <p style={{ ...t.tiny }}>เป้า ฿{savingTarget.toLocaleString()}</p>
+            </div>
+            <ProgressBar value={displaySaved} max={savingTarget} color={token.accent} />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+              <p style={{ ...t.tiny }}>อีก {daysLeft} วันเงินออก</p>
+              <p style={{ ...t.tiny, color: token.accent, fontWeight: 500 }}>{savingPct}% ของเป้า</p>
+            </div>
           </div>
         </div>
       )}
