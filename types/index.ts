@@ -76,6 +76,7 @@ export interface Transaction {
   bucketId?: string
   note?: string
   payPeriodStart: Date
+  payPeriodKey: string
   createdAt: Date
 }
 

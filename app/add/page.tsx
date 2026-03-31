@@ -109,7 +109,7 @@ export default function AddPage() {
     const guess = guessCategory(note);
     if (guess && guess !== cat) setSuggested(guess);
     else setSuggested(null);
-  }, [note]);
+  }, [note, cat]);
 
   function getBucketId(c: Category) {
     return buckets.find((b) => b.type === CAT_BUCKET[c])?.id;
@@ -127,29 +127,27 @@ export default function AddPage() {
       
       const bucketId = cat ? getBucketId(cat) : null;
 
-      const txData: any = {
+      const txData = {
         userId:         who === "me" ? user.uid : (profile.partnerId || user.uid),
         coupleId:       profile.coupleId,
         amount:         amountNum,
-        category:       cat,
+        category:       cat as Category,
         note:           note.trim() || null,
         createdAt:      Timestamp.now(),
         payPeriodStart: Timestamp.fromDate(periodStart),
         payPeriodKey,
+        ...(bucketId ? { bucketId } : {}),
       };
-
-      if (bucketId) {
-        txData.bucketId = bucketId;
-      }
 
       await addDoc(collection(db, "transactions"), txData);
       
       setDone(true);
       setAmount(""); setCat(null); setNote(""); setSuggested(null);
       setTimeout(() => { setDone(false); router.push("/overview"); }, 800);
-    } catch (e: any) { 
+    } catch (e: unknown) { 
       console.error(e);
-      alert("บันทึกไม่สำเร็จ: " + (e.message || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ"));
+      const err = e as { message?: string };
+      alert("บันทึกไม่สำเร็จ: " + (err.message || "เกิดข้อผิดพลาดไม่ทราบสาเหตุ"));
     }
     finally { setSaving(false); }
   }

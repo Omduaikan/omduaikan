@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
 import { useAuth } from "@/context/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -60,7 +59,7 @@ export default function OverviewPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) router.replace("/");
-  }, [user, authLoading]);
+  }, [user, authLoading, router]);
 
   if (authLoading || profileLoading) return <Spinner />;
   if (!profile) return null;
@@ -75,7 +74,6 @@ export default function OverviewPage() {
   
   // คำนวณยอดที่ใช้ไป โดยถ้าเป็น "รายรับพิเศษ" ให้นำไปลบออกจากยอดที่ใช้ (ทำให้ยอดใช้น้อยลง = มีเงินเหลือมากขึ้น)
   const mySpent        = myRegularTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
-  const partnerSpent   = partnerRegTxs.reduce((s, tx) => s + (tx.category === "รายรับพิเศษ" ? -tx.amount : tx.amount), 0);
 
   // ยอดเงินออมที่บันทึกผ่านปุ่ม + (ของทั้งคู่รวมกัน)
   const actualSavedTxs = transactions.filter(tx => tx.category === "เงินออม & ลงทุน");
@@ -111,9 +109,6 @@ export default function OverviewPage() {
   );
   const status    = getBudgetStatus(dailyLeft, dailyBudget);
   const statusCfg = STATUS_CONFIG[status];
-
-  // ยอดทบสะสมจากวันที่ใช้น้อยกว่างบ
-  const rollover = Math.max(dailyLeft - dailyBudget, 0);
 
   const todayStr        = format(new Date(), "yyyy-MM-dd");
   const myToday         = myRegularTxs
